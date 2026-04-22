@@ -90,6 +90,10 @@ export class ProfileStore {
   /**
    * Combine stored profile with secrets. Reads the key from disk if `privateKeyPath`
    * is set and no secret-stored key exists.
+   *
+   * For password auth, `password` is left `undefined` if nothing is stored.
+   * The caller (see `SessionManager.connect`) is expected to prompt the user
+   * on demand in that case.
    */
   async resolve(id: string): Promise<ResolvedProfile> {
     const p = this.get(id);
@@ -99,9 +103,6 @@ export class ProfileStore {
     const method = p.authMethod ?? 'password';
     if (method === 'password') {
       resolved.password = await this.ctx.secrets.get(secretKey(id, 'password'));
-      if (resolved.password === undefined) {
-        throw new Error(`No password stored for profile '${p.id}'. Run "FortiGate: Edit Profile".`);
-      }
     } else {
       const secretKeyText = await this.ctx.secrets.get(secretKey(id, 'privateKey'));
       if (secretKeyText !== undefined) {
@@ -116,6 +117,16 @@ export class ProfileStore {
       resolved.passphrase = await this.ctx.secrets.get(secretKey(id, 'passphrase'));
     }
     return resolved;
+  }
+
+  /** True if `id` is password-auth and has no saved password. */
+  async needsPasswordPrompt(id: string): Promise<boolean> {
+    const p = this.get(id);
+    if (!p) return false;
+    const method = p.authMethod ?? 'password';
+    if (method !== 'password') return false;
+    const pw = await this.ctx.secrets.get(secretKey(id, 'password'));
+    return pw === undefined;
   }
 }
 

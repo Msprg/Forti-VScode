@@ -48,6 +48,14 @@ Development Host with this extension loaded.
 2. Fill in host, port (22), username, and choose Password or SSH key auth.
 3. Credentials are stored in SecretStorage, not in settings.
 
+For password auth you can leave the password field empty. The profile will be
+saved without a stored password and you will be prompted for it on every
+**FortiGate: Connect**. The entered password is kept in memory only for the
+lifetime of that session (auto-reconnects after a dropped SSH channel reuse it
+silently); disconnecting and reconnecting prompts again. Use
+**FortiGate: Edit Profile** -> *Remove saved password* to switch an existing
+profile to prompt-every-session mode.
+
 Alternatively add entries manually in `settings.json`:
 
 ```json

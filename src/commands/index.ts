@@ -93,10 +93,19 @@ async function addProfile(c: CommandContext): Promise<void> {
     const pw = await vscode.window.showInputBox({
       prompt: `Password for ${username}@${host}`,
       password: true,
+      placeHolder: 'Leave empty to be prompted on every connection',
+      ignoreFocusOut: true,
     });
     if (pw === undefined) return;
     await c.profiles.upsert(profile);
-    await c.profiles.setPassword(id, pw);
+    if (pw === '') {
+      await c.profiles.setPassword(id, undefined);
+      vscode.window.showInformationMessage(
+        `FortiGate profile '${id}' saved without a password. You will be prompted on each connect.`,
+      );
+    } else {
+      await c.profiles.setPassword(id, pw);
+    }
   } else {
     const useFile = await vscode.window.showQuickPick(
       [
@@ -137,6 +146,7 @@ async function editProfile(c: CommandContext): Promise<void> {
   const action = await vscode.window.showQuickPick(
     [
       { label: 'Update password', value: 'pw' },
+      { label: 'Remove saved password (prompt on every connect)', value: 'pw-clear' },
       { label: 'Update private key (paste)', value: 'key' },
       { label: 'Update key passphrase', value: 'pass' },
       { label: 'Edit host/user/port', value: 'conn' },
@@ -146,8 +156,27 @@ async function editProfile(c: CommandContext): Promise<void> {
   if (!action) return;
   switch (action.value) {
     case 'pw': {
-      const v = await vscode.window.showInputBox({ prompt: 'New password', password: true });
-      if (v !== undefined) await c.profiles.setPassword(p.id, v);
+      const v = await vscode.window.showInputBox({
+        prompt: 'New password (leave empty to be prompted on every connect)',
+        password: true,
+        ignoreFocusOut: true,
+      });
+      if (v === undefined) break;
+      if (v === '') {
+        await c.profiles.setPassword(p.id, undefined);
+        vscode.window.showInformationMessage(
+          `Saved password cleared for '${p.id}'. You will be prompted on each connect.`,
+        );
+      } else {
+        await c.profiles.setPassword(p.id, v);
+      }
+      break;
+    }
+    case 'pw-clear': {
+      await c.profiles.setPassword(p.id, undefined);
+      vscode.window.showInformationMessage(
+        `Saved password cleared for '${p.id}'. You will be prompted on each connect.`,
+      );
       break;
     }
     case 'key': {

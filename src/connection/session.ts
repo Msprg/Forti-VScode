@@ -295,9 +295,22 @@ export class SessionManager implements vscode.Disposable {
       await this.disconnect();
     }
     const profile = await this.profiles.resolve(profileId);
+    if ((profile.authMethod ?? 'password') === 'password' && profile.password === undefined) {
+      const pw = await vscode.window.showInputBox({
+        prompt: `Password for ${profile.username}@${profile.host}`,
+        password: true,
+        ignoreFocusOut: true,
+        placeHolder: 'No password is saved for this profile — enter it for this session',
+      });
+      if (pw === undefined) {
+        throw new Error('FortiGate connect cancelled: no password provided.');
+      }
+      // Kept in memory on the session only. Auto-reconnect reuses the same
+      // value; a fresh `SessionManager.connect()` (e.g. after disconnect) will
+      // re-resolve from SecretStorage and re-prompt again.
+      profile.password = pw;
+    }
     const session = new FortigateSession(profile, this.logger);
-    // Bubble up low-level connection-state changes so the tree / status bar
-    // re-render when an auto-reconnect happens.
     this.sessionSub = session.onDidChangeConnection(() => this.emitter.fire(session));
     await session.connect();
     this.session = session;
