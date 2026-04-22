@@ -110,7 +110,7 @@ Key design decisions:
 - **Single-VDOM** scope for now; the tree/URI layout is designed so VDOM
   support can be added later by prefixing the URI with a `vdom/<name>/` segment.
 - **Paging disabled at session start** (`config system console` /
-  `set output standard`) plus `| no-more` on every `show` as a belt-and-braces.
+  `set output standard`) so `show` returns the whole config in one buffer.
 - **Prompt detection** is regex-based (`<hostname>[ (vdom)] #` at buffer end),
   overridable via `fortigate.readyPromptRegex` in settings.
 

@@ -96,6 +96,21 @@ describe('FortiGate parser', () => {
     assert.deepStrictEqual(keys.slice(0, 3), ['name', 'srcintf', 'dstintf']);
   });
 
+  it('handles multi-line quoted values (certificates, keys, banners)', () => {
+    const doc = parse(loadFixture('certificate.conf'));
+    assert.strictEqual(doc.blocks.length, 1);
+    const block = doc.blocks[0];
+    assert.deepStrictEqual(block.path, ['vpn', 'certificate', 'local']);
+    const entry = block.entries.get('Fortinet_Factory')!;
+    const pk = entry.settings.get('private-key')!;
+    assert.strictEqual(pk.values.length, 1);
+    assert.ok(pk.values[0].includes('BEGIN RSA PRIVATE KEY'));
+    assert.ok(pk.values[0].includes('END RSA PRIVATE KEY'));
+    const cert = entry.settings.get('certificate')!;
+    assert.ok(cert.values[0].includes('BEGIN CERTIFICATE'));
+    assert.ok(cert.values[0].includes('end of cert content here'));
+  });
+
   it('handles nested config inside an edit', () => {
     const src = [
       'config firewall policy',

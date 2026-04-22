@@ -41,6 +41,19 @@ export class Logger implements vscode.Disposable {
 }
 
 function safeStringify(value: unknown): string {
+  if (value instanceof Error) {
+    const obj: Record<string, unknown> = {
+      name: value.name,
+      message: value.message,
+    };
+    for (const k of Object.keys(value)) obj[k] = (value as unknown as Record<string, unknown>)[k];
+    if (value.stack) obj.stack = value.stack;
+    try {
+      return JSON.stringify(obj);
+    } catch {
+      return `${value.name}: ${value.message}`;
+    }
+  }
   try {
     return JSON.stringify(value);
   } catch {

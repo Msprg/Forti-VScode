@@ -58,9 +58,9 @@ export class FortigateSession implements vscode.Disposable {
   /** Fetch the full `show` and parse into a Document. */
   async showAll(): Promise<Document> {
     const ssh = this.requireSsh();
-    // `show` returns only non-default config. Using `| no-more` as a belt-and-braces
-    // against any paging that survived the console settings.
-    const text = await ssh.runCommand('show | no-more');
+    // Paging is disabled on connect via `config system console / set output standard`.
+    // We avoid `| no-more` here: not all FortiOS versions support that pipe.
+    const text = await ssh.runCommand('show');
     const doc = parse(text);
     this.cached = doc;
     return doc;
@@ -72,7 +72,7 @@ export class FortigateSession implements vscode.Disposable {
    */
   async showPath(path: string[]): Promise<Document> {
     const ssh = this.requireSsh();
-    const text = await ssh.runCommand(`show ${path.join(' ')} | no-more`);
+    const text = await ssh.runCommand(`show ${path.join(' ')}`);
     return parse(text);
   }
 
@@ -95,16 +95,16 @@ export class FortigateSession implements vscode.Disposable {
   }
 
   /**
-   * Best-effort: tell the console to emit the full output without paging, and
-   * disable pager in the current shell. Failures are logged but non-fatal because
-   * `| no-more` on every `show` provides a strong fallback.
+   * Tell the console to emit the full output without paging so `show` returns
+   * everything in a single buffer. Non-fatal: if it fails, a very large config
+   * may still be truncated at the --More-- pager.
    */
   private async disablePaging(): Promise<void> {
     const ssh = this.requireSsh();
     try {
       await ssh.runScript(['config system console', 'set output standard', 'end']);
     } catch (err) {
-      this.logger.warn('Could not disable console paging; relying on `| no-more`', err);
+      this.logger.warn('Could not disable console paging', err);
     }
   }
 }

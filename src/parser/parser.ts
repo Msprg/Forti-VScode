@@ -27,7 +27,7 @@ export class ParseError extends Error {
  * Blank lines and `#`-prefixed comment/header lines are ignored.
  */
 export function parse(text: string): Document {
-  const lines = text.split(/\r\n|\n|\r/);
+  const lines = splitLogicalLines(text);
   const doc: Document = { blocks: [] };
 
   // Stack of scopes. Each scope is either a ConfigBlock or a ConfigEntry.
@@ -128,4 +128,57 @@ export function parse(text: string): Document {
 function readFirstToken(line: string): string {
   const m = /^\S+/.exec(line);
   return m ? m[0] : '';
+}
+
+/**
+ * Split CLI text into logical lines, treating an open double-quote as "consume
+ * characters (including newlines) until the matching closing quote".
+ *
+ * This is necessary because FortiGate `show` embeds multi-line values inside
+ * quoted strings for certificates, banners, replacement messages, preshared keys,
+ * and similar blobs. A naive split on `\n` would shred those values into lines
+ * that start with base64 / PEM text and confuse the parser.
+ *
+ * Escape handling: inside a quoted string, `\X` is consumed as two characters
+ * without interpretation, so `\"` cannot close the string.
+ */
+export function splitLogicalLines(text: string): string[] {
+  const out: string[] = [];
+  let buf = '';
+  let inQuote = false;
+  let i = 0;
+  const n = text.length;
+  while (i < n) {
+    const c = text[i];
+    if (inQuote) {
+      if (c === '\\' && i + 1 < n) {
+        buf += c + text[i + 1];
+        i += 2;
+        continue;
+      }
+      if (c === '"') {
+        inQuote = false;
+      }
+      buf += c;
+      i++;
+      continue;
+    }
+    if (c === '\r' || c === '\n') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      out.push(buf);
+      buf = '';
+      i++;
+      continue;
+    }
+    if (c === '"') {
+      inQuote = true;
+      buf += c;
+      i++;
+      continue;
+    }
+    buf += c;
+    i++;
+  }
+  if (buf.length > 0 || out.length === 0) out.push(buf);
+  return out;
 }
