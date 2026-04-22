@@ -1,0 +1,254 @@
+{
+  "name": "forti-vscode",
+  "displayName": "FortiGate Live Config",
+  "description": "Browse and edit a live FortiGate configuration over SSH with staged changes and verified apply.",
+  "version": "0.1.0",
+  "publisher": "forti-vscode",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:fortigateConfig",
+    "onCommand:fortigate.connect",
+    "onCommand:fortigate.addProfile",
+    "onCommand:fortigate.applyChanges",
+    "onCommand:fortigate.showPendingChanges",
+    "onFileSystem:fortigate"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "fortigate",
+          "title": "FortiGate",
+          "icon": "media/fortigate.svg"
+        }
+      ]
+    },
+    "views": {
+      "fortigate": [
+        {
+          "id": "fortigateConfig",
+          "name": "Configuration",
+          "icon": "media/fortigate.svg",
+          "contextualTitle": "FortiGate Configuration"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "fortigateConfig",
+        "contents": "No FortiGate profile connected.\n[Add Profile](command:fortigate.addProfile)\n[Connect](command:fortigate.connect)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "fortigate.addProfile",
+        "title": "FortiGate: Add Profile"
+      },
+      {
+        "command": "fortigate.editProfile",
+        "title": "FortiGate: Edit Profile"
+      },
+      {
+        "command": "fortigate.removeProfile",
+        "title": "FortiGate: Remove Profile"
+      },
+      {
+        "command": "fortigate.connect",
+        "title": "FortiGate: Connect",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "fortigate.disconnect",
+        "title": "FortiGate: Disconnect",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "fortigate.refreshConfig",
+        "title": "FortiGate: Refresh Configuration",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "fortigate.openNode",
+        "title": "FortiGate: Open Node"
+      },
+      {
+        "command": "fortigate.showPendingChanges",
+        "title": "FortiGate: Show Pending Changes",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "fortigate.applyChanges",
+        "title": "FortiGate: Apply Changes",
+        "icon": "$(cloud-upload)"
+      },
+      {
+        "command": "fortigate.discardStaged",
+        "title": "FortiGate: Discard Staged Changes",
+        "icon": "$(discard)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "fortigate.connect",
+          "when": "view == fortigateConfig && !fortigate.connected",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fortigate.disconnect",
+          "when": "view == fortigateConfig && fortigate.connected",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fortigate.refreshConfig",
+          "when": "view == fortigateConfig && fortigate.connected",
+          "group": "navigation@2"
+        },
+        {
+          "command": "fortigate.showPendingChanges",
+          "when": "view == fortigateConfig && fortigate.hasPending",
+          "group": "navigation@3"
+        },
+        {
+          "command": "fortigate.applyChanges",
+          "when": "view == fortigateConfig && fortigate.hasPending",
+          "group": "navigation@4"
+        },
+        {
+          "command": "fortigate.discardStaged",
+          "when": "view == fortigateConfig && fortigate.hasPending",
+          "group": "navigation@5"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "fortigate.openNode",
+          "when": "false"
+        }
+      ]
+    },
+    "languages": [
+      {
+        "id": "fortigate-cli",
+        "aliases": [
+          "FortiGate CLI",
+          "fortigate"
+        ],
+        "extensions": [
+          ".fcfg",
+          ".fgt"
+        ],
+        "configuration": "./src/language/language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "fortigate-cli",
+        "scopeName": "source.fortigate",
+        "path": "./src/language/fortigate.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "FortiGate",
+      "properties": {
+        "fortigate.profiles": {
+          "type": "array",
+          "default": [],
+          "description": "FortiGate connection profiles. Passwords and private keys are stored separately in VS Code SecretStorage.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "host",
+              "username"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Unique profile identifier used internally."
+              },
+              "name": {
+                "type": "string",
+                "description": "Display name for this profile."
+              },
+              "host": {
+                "type": "string",
+                "description": "Hostname or IP address of the FortiGate appliance."
+              },
+              "port": {
+                "type": "number",
+                "default": 22,
+                "description": "SSH port."
+              },
+              "username": {
+                "type": "string",
+                "description": "SSH username."
+              },
+              "authMethod": {
+                "type": "string",
+                "enum": [
+                  "password",
+                  "key"
+                ],
+                "default": "password",
+                "description": "Authentication method."
+              },
+              "privateKeyPath": {
+                "type": "string",
+                "description": "Path to private key file (when authMethod is 'key'). Optional; the key can alternatively be stored in SecretStorage."
+              },
+              "hostKeyFingerprint": {
+                "type": "string",
+                "description": "Optional pinned SHA256 host key fingerprint for verification."
+              }
+            }
+          }
+        },
+        "fortigate.readyPromptRegex": {
+          "type": "string",
+          "default": "[\\w.\\-]+(?:\\s*\\([^)]*\\))?\\s*[#$]\\s*$",
+          "description": "Regex used to detect the device shell prompt after a command completes."
+        },
+        "fortigate.commandTimeoutMs": {
+          "type": "number",
+          "default": 30000,
+          "description": "Per-command timeout in milliseconds."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.config.js --production",
+    "watch": "node esbuild.config.js --watch",
+    "compile-tests": "tsc -p ./",
+    "test": "node ./out/test/runTests.js",
+    "unit": "mocha --require ts-node/register \"test/unit/**/*.test.ts\"",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.6",
+    "@types/node": "^20.11.0",
+    "@types/ssh2": "^1.15.0",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "@vscode/test-electron": "^2.4.0",
+    "@vscode/vsce": "^2.27.0",
+    "esbuild": "^0.20.2",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "ssh2": "^1.15.0"
+  }
+}

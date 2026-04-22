@@ -1,0 +1,7 @@
+{
+  "extension": ["ts"],
+  "spec": "test/unit/**/*.test.ts",
+  "require": "ts-node/register",
+  "timeout": 10000,
+  "ui": "bdd"
+}

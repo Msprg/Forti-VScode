@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "scopeName": "source.fortigate",
+  "name": "FortiGate CLI",
+  "fileTypes": ["fcfg", "fgt"],
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#block-keywords" },
+    { "include": "#set-keywords" },
+    { "include": "#numbers" },
+    { "include": "#strings" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "match": "#.*$",
+          "name": "comment.line.number-sign.fortigate"
+        }
+      ]
+    },
+    "block-keywords": {
+      "patterns": [
+        {
+          "match": "^\\s*(config|end|edit|next|delete|purge|rename|clone|move)\\b",
+          "captures": {
+            "1": { "name": "keyword.control.block.fortigate" }
+          }
+        }
+      ]
+    },
+    "set-keywords": {
+      "patterns": [
+        {
+          "match": "^\\s*(set|unset|get|show|append|select|abort)\\b",
+          "captures": {
+            "1": { "name": "keyword.other.action.fortigate" }
+          }
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b\\d+(\\.\\d+)?\\b",
+          "name": "constant.numeric.fortigate"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "begin": "\"",
+          "end": "\"",
+          "name": "string.quoted.double.fortigate",
+          "patterns": [
+            {
+              "match": "\\\\.",
+              "name": "constant.character.escape.fortigate"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
