@@ -3,7 +3,7 @@
   "displayName": "FortiGate Live Config",
   "description": "Browse and edit a live FortiGate configuration over SSH with staged changes and verified apply.",
   "repository": "https://github.com/Msprg/Forti-VScode.git",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "Msprg",
   "license": "MIT",
   "engines": {
