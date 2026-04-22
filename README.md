@@ -128,6 +128,14 @@ Key design decisions:
   `set output standard`) so `show` returns the whole config in one buffer.
 - **Prompt detection** is regex-based (`<hostname>[ (vdom)] #` at buffer end),
   overridable via `fortigate.readyPromptRegex` in settings.
+- **Session keepalive & auto-reconnect**: a trivial `get system status` is sent
+  every ~3 minutes so FortiGate's default 5-minute `admintimeout` does not kill
+  the CLI shell. If the session is dropped anyway (network blip, manual
+  `execute ssh-session close-all`, etc.), the next Refresh / Apply / open
+  transparently re-opens the SSH connection before running the command. Read
+  operations (Refresh) are retried once if they fail mid-flight; Apply is not
+  retried to avoid re-executing commands that may already have committed on the
+  device.
 
 ## Extension settings
 

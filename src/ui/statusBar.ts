@@ -29,6 +29,7 @@ export class StatusBar implements vscode.Disposable {
 
   private render(): void {
     const profile = this.sessions.activeProfile();
+    const session = this.sessions.active();
     const count = this.staged.count();
     if (!profile) {
       this.item.text = '$(debug-disconnect) FortiGate';
@@ -36,10 +37,14 @@ export class StatusBar implements vscode.Disposable {
       this.item.command = 'fortigate.connect';
       return;
     }
+    const live = session?.connected ?? false;
+    const icon = live ? '$(plug)' : '$(sync~spin)';
     const pending = count > 0 ? `  $(edit) ${count} pending` : '';
-    this.item.text = `$(plug) FortiGate: ${profile.name ?? profile.id}${pending}`;
-    this.item.tooltip =
-      count > 0
+    const suffix = live ? '' : '  (reconnecting)';
+    this.item.text = `${icon} FortiGate: ${profile.name ?? profile.id}${suffix}${pending}`;
+    this.item.tooltip = !live
+      ? 'FortiGate session dropped. It will reconnect automatically on the next operation.'
+      : count > 0
         ? 'Click to preview the pending CLI changes.'
         : 'Click to refresh the FortiGate configuration.';
     this.item.command = count > 0 ? 'fortigate.showPendingChanges' : 'fortigate.refreshConfig';
