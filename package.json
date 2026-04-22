@@ -1,9 +1,10 @@
 {
-  "name": "forti-vscode",
+  "name": "FortiConfig",
   "displayName": "FortiGate Live Config",
   "description": "Browse and edit a live FortiGate configuration over SSH with staged changes and verified apply.",
+  "repository": "https://github.com/Msprg/Forti-VScode.git",
   "version": "0.1.0",
-  "publisher": "forti-vscode",
+  "publisher": "Msprg",
   "license": "MIT",
   "engines": {
     "vscode": "^1.90.0"
@@ -79,6 +80,16 @@
         "title": "FortiGate: Open Node"
       },
       {
+        "command": "fortigate.openWholeSection",
+        "title": "Open Whole Section",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "fortigate.openGroup",
+        "title": "Open All Sections In Group",
+        "icon": "$(files)"
+      },
+      {
         "command": "fortigate.showPendingChanges",
         "title": "FortiGate: Show Pending Changes",
         "icon": "$(diff)"
@@ -127,9 +138,44 @@
           "group": "navigation@5"
         }
       ],
+      "view/item/context": [
+        {
+          "command": "fortigate.openWholeSection",
+          "when": "view == fortigateConfig && viewItem == fortigate.table",
+          "group": "inline"
+        },
+        {
+          "command": "fortigate.openWholeSection",
+          "when": "view == fortigateConfig && viewItem == fortigate.table",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fortigate.openWholeSection",
+          "when": "view == fortigateConfig && viewItem == fortigate.singleton",
+          "group": "navigation@1"
+        },
+        {
+          "command": "fortigate.openGroup",
+          "when": "view == fortigateConfig && viewItem == fortigate.group",
+          "group": "inline"
+        },
+        {
+          "command": "fortigate.openGroup",
+          "when": "view == fortigateConfig && viewItem == fortigate.group",
+          "group": "navigation@1"
+        }
+      ],
       "commandPalette": [
         {
           "command": "fortigate.openNode",
+          "when": "false"
+        },
+        {
+          "command": "fortigate.openWholeSection",
+          "when": "false"
+        },
+        {
+          "command": "fortigate.openGroup",
           "when": "false"
         }
       ]

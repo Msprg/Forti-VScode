@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { FORTIGATE_SCHEME, parseUri } from '../fs/uri';
 import { SessionManager } from '../connection/session';
 import { StagedChanges } from '../staging/stagedChanges';
+import { pathKey } from '../parser';
 
 /**
  * Adds a subtle badge + color to tree items whose underlying block or entry has
@@ -25,17 +26,30 @@ export class TreeDecorationProvider implements vscode.FileDecorationProvider {
     const doc = session?.cachedDocument();
     const parsed = parseUri(uri, doc);
     if (!parsed) return undefined;
-    if (parsed.entryName !== undefined) {
+
+    if (parsed.kind === 'entry') {
       if (this.staged.isEntryModified(parsed.blockPath, parsed.entryName)) {
         return pendingDecoration();
       }
       return undefined;
     }
-    if (this.staged.isPathModified(parsed.blockPath)) {
-      return pendingDecoration();
+    if (parsed.kind === 'block') {
+      if (this.staged.isPathModified(parsed.blockPath)) {
+        return pendingDecoration();
+      }
+      return undefined;
+    }
+    // Group: highlight if any block under the prefix is modified.
+    for (const o of this.staged.list()) {
+      if (hasPathPrefix(o.path, parsed.groupPath)) return pendingDecoration();
     }
     return undefined;
   }
+}
+
+function hasPathPrefix(path: string[], prefix: string[]): boolean {
+  if (path.length < prefix.length) return false;
+  return pathKey(path.slice(0, prefix.length)) === pathKey(prefix);
 }
 
 function pendingDecoration(): vscode.FileDecoration {

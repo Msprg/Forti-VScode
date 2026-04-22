@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 import { ProfileStore, StoredProfile } from '../connection/profileStore';
 import { SessionManager } from '../connection/session';
 import { StagedChanges } from '../staging/stagedChanges';
-import { ConfigTreeProvider } from '../tree/configTreeProvider';
+import { ConfigTreeProvider, FortiNode } from '../tree/configTreeProvider';
 import { FortigateFs } from '../fs/fortigateFs';
 import { Logger } from '../util/logger';
 import { applyChanges, ApplyMismatchError } from '../commit/applyRunner';
 import { build as buildScript } from '../commit/diffEngine';
 import { PREVIEW_SCHEME, PreviewProvider, makePreviewUri } from '../commit/previewProvider';
+import { makeBlockUri, makeGroupFileUri } from '../fs/uri';
 
 export interface CommandContext {
   profiles: ProfileStore;
@@ -39,6 +40,10 @@ export function registerCommands(
   register('fortigate.disconnect', () => disconnect(c));
   register('fortigate.refreshConfig', () => refreshConfig(c));
   register('fortigate.openNode', (uri: vscode.Uri) => openNode(uri));
+  register('fortigate.openWholeSection', (node: FortiNode | vscode.Uri) =>
+    openWholeSection(node),
+  );
+  register('fortigate.openGroup', (node: FortiNode | vscode.Uri) => openGroup(c, node));
   register('fortigate.showPendingChanges', () => showPendingChanges(c, preview));
   register('fortigate.applyChanges', () => applyStaged(c));
   register('fortigate.discardStaged', () => discardStaged(c));
@@ -266,6 +271,50 @@ async function openNode(uri: vscode.Uri): Promise<void> {
   const doc = await vscode.workspace.openTextDocument(uri);
   await vscode.languages.setTextDocumentLanguage(doc, 'fortigate-cli');
   await vscode.window.showTextDocument(doc, { preview: false });
+}
+
+/**
+ * Right-click target on a tabular/singleton block row. Opens the whole
+ * `config <path> ... end` section (including every `edit <name>` entry) in a
+ * single editor so the user can edit many entries at once and Ctrl+S.
+ */
+async function openWholeSection(target: FortiNode | vscode.Uri): Promise<void> {
+  if (target instanceof vscode.Uri) {
+    await openNode(target);
+    return;
+  }
+  if (!target || !target.profileId || !target.path || target.path.length === 0) {
+    vscode.window.showWarningMessage('No section to open.');
+    return;
+  }
+  // For both 'block' and 'entry' nodes we point at the enclosing block. For
+  // 'group' nodes we fall through to openGroup below when routed there.
+  await openNode(makeBlockUri(target.profileId, target.path));
+}
+
+/**
+ * Right-click target on a group row. Opens a single virtual file containing
+ * every `config ... end` block whose path starts with the group prefix. Each
+ * block is staged independently when saved.
+ */
+async function openGroup(
+  c: CommandContext,
+  target: FortiNode | vscode.Uri,
+): Promise<void> {
+  if (target instanceof vscode.Uri) {
+    await openNode(target);
+    return;
+  }
+  if (!target || target.kind !== 'group') {
+    vscode.window.showWarningMessage('Not a group node.');
+    return;
+  }
+  const session = c.sessions.active();
+  if (!session) {
+    vscode.window.showWarningMessage('No active FortiGate session.');
+    return;
+  }
+  await openNode(makeGroupFileUri(target.profileId, target.path));
 }
 
 async function showPendingChanges(

@@ -76,6 +76,21 @@ Then run **FortiGate: Edit Profile** -> *Update password* to save the secret.
 6. Click **Apply Changes** to execute. The extension reads the modified
    sections back and only reports success if they match your edits.
 
+### Edit whole sections or groups at once
+
+Clicking a tabular row (e.g. `firewall policy`) expands it to show each
+entry. If you'd rather edit all entries together in one buffer, **right
+click the row** and choose **Open Whole Section** - this opens a virtual
+file containing the entire `config firewall policy ... end` block with
+every `edit` entry inside. Save the buffer to stage every change in it
+at once (adds, edits, deletes of entries are all detected by the diff).
+
+For even broader edits, **right click a group row** (e.g. the top-level
+`system` node) and choose **Open All Sections In Group** - this
+concatenates every `config system ... end` block (global, interface, dns,
+dhcp server, ...) into a single editable buffer. Each block is still
+staged independently when you save.
+
 ## How it works
 
 ```
